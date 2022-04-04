@@ -29,11 +29,11 @@ const shorten = async function (req, res) {
             return res.status(400).send({ status: false, msg: "Please Enter Valid Data" })
         }
 
-        const { urlCode, longUrl } = data
+        const { longUrl } = data
 
-        if (!isValid(urlCode)) {
-            return res.status(400).send({ status: false, msg: "Bad Request!!! Please Provide Url Code" })
-        }
+        // if (!isValid(urlCode)) {
+        //     return res.status(400).send({ status: false, msg: "Bad Request!!! Please Provide Url Code" })
+        // }
 
         if (!isValid(longUrl)) {
             return res.status(400).send({ status: false, msg: "Bad Request!!! Please Provide Long Url to Be Shorten" })
@@ -55,7 +55,7 @@ const shorten = async function (req, res) {
             
             const shortUrl = baseUrl + '/' + short
             
-            let input = { longUrl : data.longUrl, shortUrl:shortUrl, urlCode : data.urlCode}
+            let input = { longUrl : data.longUrl, shortUrl:shortUrl, urlCode : short}
             const CreatedUrl = await urlModel.create(input)
             const final = {
                 longUrl : CreatedUrl.longUrl, shortUrl:CreatedUrl.shortUrl, urlCode : CreatedUrl.urlCode
@@ -83,8 +83,8 @@ const urlCode = async function(req,res){
 
         const data = await urlModel.findOne({urlCode: code}).select({createdAt:0,updatedAt:0,__v:0})
         if(data){
-            // return res.status(200).redirect(data.longUrl)
-             return res.status(200).send({status:true,data:data.longUrl})
+            return res.status(302).redirect(data.longUrl)
+           //  return res.status(200).send({status:true,data:data.longUrl})
 
         }
         else{
