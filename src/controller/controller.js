@@ -64,7 +64,7 @@ const shorten = async function (req, res) {
 
         }
         else {
-            res.stauts(401).send({ status: false, msg: "Invalid Long Url" })
+            res.status(401).send({ status: false, msg: "Invalid Long Url" })
         }
     }
     catch (err) {
@@ -84,11 +84,10 @@ const urlCode = async function(req,res){
         const data = await urlModel.findOne({urlCode: code}).select({createdAt:0,updatedAt:0,__v:0})
         if(data){
             return res.status(302).redirect(data.longUrl)
-           //  return res.status(200).send({status:true,data:data.longUrl})
-
+           
         }
         else{
-        return res.status(404).send({status:true,msg : "No Such URL found"})
+        return res.status(404).send({status:false,msg : "No Such URL found"})
         }
     }
     catch(error){
