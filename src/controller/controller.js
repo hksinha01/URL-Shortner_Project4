@@ -25,6 +25,10 @@ const shorten = async function (req, res) {
         const baseUrl = "http://localhost:3000";
         const data = req.body;
 
+        if(isValidReqBody(req.query)){
+            return res.status(400).send({status : false,msg : "Query Should Not be Present"})
+        }
+
         if (!isValidReqBody(data)) {
             return res.status(400).send({ status: false, msg: "Please Enter Valid Data" })
         }
@@ -41,10 +45,10 @@ const shorten = async function (req, res) {
 
         if (!validUrl.isUri(baseUrl)) {
             console.log("invalid base url")
-            return res.status(401).send({ status: false, msg: 'Invalid base URL' })
+            return res.status(400).send({ status: false, msg: 'Invalid base URL' })
         }
 
-        const short = shortid.generate()
+        const short = shortid.generate().toLowerCase().trim()
 
         if (validUrl.isUri(longUrl)) {
     
@@ -64,7 +68,7 @@ const shorten = async function (req, res) {
 
         }
         else {
-            res.status(401).send({ status: false, msg: "Invalid Long Url" })
+            res.status(400).send({ status: false, msg: "Invalid Long Url" })
         }
     }
     catch (err) {
@@ -77,10 +81,16 @@ const shorten = async function (req, res) {
 const urlCode = async function(req,res){
     try{
         const code = req.params.urlCode;
-        if(!isValid(code)){
+        if(!isValid(code.trim().toLowerCase())){
             return res.status(400).send({status : false , msg : "Please pass Url Code In Params"})
         }
 
+        if(isValidReqBody(req.body)){
+            return res.status(400).send({status : false,msg : "Body Should Not be Present"})
+        }
+        if(isValidReqBody(req.query)){
+            return res.status(400).send({status : false,msg : "Query Should Not be Present"})
+        }
         const data = await urlModel.findOne({urlCode: code}).select({createdAt:0,updatedAt:0,__v:0})
         if(data){
             return res.status(302).redirect(data.longUrl)
