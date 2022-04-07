@@ -46,7 +46,6 @@ const isValid = function (value) {
     return true
 }
 
-
 const shorten = async function (req, res) {
 
     try {
@@ -57,19 +56,12 @@ const shorten = async function (req, res) {
             return res.status(400).send({ status: false, msg: "Please Enter Valid Data" })
         }
 
-        if(isValidReqBody(req.params)){
-            return res.status(400).send({status : false,msg : "Params Shouldnt Be Present"})
-        }
-
         if(isValidReqBody(req.query)){
             return res.status(400).send({status : false,msg : "Query Shouldnt Be Present"})
         }
 
-        const { longUrl } = data
 
-        // if (!isValid(urlCode)) {
-        //     return res.status(400).send({ status: false, msg: "Bad Request!!! Please Provide Url Code" })
-        // }
+        const { longUrl } = data
 
         if (!isValid(longUrl)) {
             return res.status(400).send({ status: false, msg: "Bad Request!!! Please Provide Long Url to Be Shorten" })
@@ -83,36 +75,36 @@ const shorten = async function (req, res) {
         const short = shortid.generate()
 
         if (validUrl.isUri(longUrl)) {
-            
-            
+
+            const shortForm = baseUrl + '/' + short
+            let shortUrl = shortForm.toLocaleLowerCase()
+
             let checkforUrl = await GET_ASYNC(`${longUrl}`)
-           if (checkforUrl) {
-           console.log("This is from cache")
-            return res.status(200).send({ status: true, "data": JSON.parse(checkforUrl) })
-          }
-    //---FETCH THE DATA IN MONGO DB IF IT IS NOT PRESENT IN CACHE
-
-
-    
-            let url =await urlModel.findOne({ longUrl}).select({createdAt:0,updatedAt:0,__v:0})
-            if (url) {
-                return res.status(200).send({ status: true, msg: "This Url was Already Shorten", data: url })
+            if (checkforUrl) {
+                console.log("This is coming from cache in shorten")
+                return res.status(200).send({ status: true, msg: "This Url was Already Shorten","data": JSON.parse(checkforUrl) })
             }
-            
-            const shortUrl = baseUrl + '/' + short
-            
-            let input = { longUrl : data.longUrl, shortUrl:shortUrl, urlCode : short}
+
+            let url = await urlModel.findOne({ longUrl }).select({ _id: 0, createdAt: 0, updatedAt: 0, __v: 0 })
+            if (url) {
+                return res.status(200).send({ status: true, msg: "This Url was Already Shorten","data": url }) //---if already exist
+            }
+
+
+            let input = { longUrl: data.longUrl, shortUrl: shortUrl, urlCode: short }
             const CreatedUrl = await urlModel.create(input)
             const final = {
-                longUrl : CreatedUrl.longUrl, shortUrl:CreatedUrl.shortUrl, urlCode : CreatedUrl.urlCode
+                longUrl: CreatedUrl.longUrl,
+                shortUrl: CreatedUrl.shortUrl,
+                urlCode: CreatedUrl.urlCode
             }
-            await SET_ASYNC(`${longUrl}`, JSON.stringify(CreatedUrl))
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(input))
 
-           return res.status(201).send({ status: true, msg: "Short Url Created Succesfully", data: final })
+            res.status(201).send({ status: true, msg: "Short Url Created Succesfully", data: final })
 
         }
         else {
-           return res.status(401).send({ status: false, msg: "Invalid Long Url" })
+            res.status(401).send({ status: false, msg: "Invalid Long Url" })
         }
     }
     catch (err) {
@@ -121,6 +113,7 @@ const shorten = async function (req, res) {
     }
 
 }
+
 
 const urlCode = async function(req,res){
     try{
@@ -141,7 +134,7 @@ const urlCode = async function(req,res){
 
         if(cahcedUrlCode) {
             parseData = JSON.parse(cahcedUrlCode)
-            console.log("THis is from cache")
+            console.log("THis is from cache (get)")
             return res.status(302).redirect(parseData.longUrl)
         }
 
