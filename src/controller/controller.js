@@ -57,6 +57,14 @@ const shorten = async function (req, res) {
             return res.status(400).send({ status: false, msg: "Please Enter Valid Data" })
         }
 
+        if(isValidReqBody(req.params)){
+            return res.status(400).send({status : false,msg : "Params Shouldnt Be Present"})
+        }
+
+        if(isValidReqBody(req.query)){
+            return res.status(400).send({status : false,msg : "Query Shouldnt Be Present"})
+        }
+
         const { longUrl } = data
 
         // if (!isValid(urlCode)) {
@@ -118,8 +126,15 @@ const urlCode = async function(req,res){
     try{
         const code = req.params.urlCode;
 
-        if(!isValid(code)){
+        if(!isValid(code.toLowerCase())){
             return res.status(400).send({status : false , msg : "Please pass Url Code In Params"})
+        }
+        if(isValidReqBody(req.body)){
+            return res.status(400).send({status : false,msg : "Body Shouldnt Be Present"})
+        }
+
+        if(isValidReqBody(req.query)){
+            return res.status(400).send({status : false,msg : "Query Shouldnt Be Present"})
         }
 
         let cahcedUrlCode = await GET_ASYNC(`${req.params.urlCode}`)
