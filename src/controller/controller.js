@@ -77,7 +77,7 @@ const shorten = async function (req, res) {
         if (validUrl.isUri(longUrl)) {
 
             const shortForm = baseUrl + '/' + short
-            let shortUrl = shortForm.toLocaleLowerCase()
+            let shortUrl = shortForm.toLowerCase()
 
             let checkforUrl = await GET_ASYNC(`${longUrl}`)
             if (checkforUrl) {
