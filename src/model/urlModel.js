@@ -12,7 +12,6 @@ const UrlSchema = new mongoose.Schema({
       longUrl: {
                  type : String,
                  required:true,
-               //  match: ubbdn,
                  trim:true
                },
 

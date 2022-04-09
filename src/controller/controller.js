@@ -72,7 +72,7 @@ const shorten = async function (req, res) {
             return res.status(401).send({ status: false, msg: 'Invalid base URL' })
         }
 
-        const short = shortid.generate()
+        const short = shortid.generate().toLowerCase()
 
         if (validUrl.isUri(longUrl)) {
 
