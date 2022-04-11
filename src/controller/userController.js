@@ -116,6 +116,7 @@ const register = async function(req,res){
         }
 
         const output = await userModel.create(input)
+        return res.status(201).send({status:true,msg:"User Succesfully Created",data:output})
 
 
     }
