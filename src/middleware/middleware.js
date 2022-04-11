@@ -22,7 +22,30 @@ const authentication = function(req,res){
      return res.status(500).send({status: false,msg:error.message})
  }
 }
+
+const authByUserId = function(req,res){
+    try{
+        let id = req.userId
+        let user = req.params.userId
+
+        if(!validator.isValidobjectId(user)){
+            return res.status(400).send({staus:false,msg:"Please enter Valid UserID(24 char)"})
+        }
+
+        if(id !== user){
+            return res.status(403).send({status:false,msg:"You are not authorized"})
+        }
+
+        next()
+
+    }
+    catch(error){
+        return res.staus(500).send({status:false,msg:error.message})
+    }
+}
+
 module.exports.authentication = authentication
+module.exports.authByUserId = authByUserId
 
 
 
