@@ -4,7 +4,9 @@ const router = express.Router()
 const userController = require("../controller/userController")
 const middleware = require("../middleware/middleware")
 
-router.post("/register".userController)
+router.post("/register",userController.register)
+
+module.exports = router
 
 
 

@@ -18,6 +18,9 @@
   },
   "homepage": "https://github.com/sabihak89/thorium#readme",
   "dependencies": {
+    "aws": "^0.0.3-2",
+    "aws-sdk": "^2.1111.0",
+    "bcrypt": "^5.0.1",
     "express": "^4.17.3",
     "jsonwebtoken": "^8.5.1",
     "module": "^1.2.5",

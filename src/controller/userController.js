@@ -1,13 +1,122 @@
 const userModel = require("../models/userModel")
 const validator = require("../validator/validator")
 const middleware = require("../middleware/middleware")
+const bcrypt = require ('bcrypt');
+const aws = require("../aws/aws")
+const jwt = require("jsonwebtoken")
 
-const register = function(req,res){
+
+
+const register = async function(req,res){
     try{ 
-        const data =req.body
+        const data =req.body.raw
+
         if(!validator.isValidReqBody(data)){
             return res.status(400).send({status:false , msg : "Enter valid data"})
         }
+
+        if(validator.isValidReqBody(req.query)){
+            return res.status(400).send({status:false , msg:"data in query params are not required"})
+        }
+
+        const {fname,lname,email,profileImage,phone,address} = data
+
+        if(!validator.isValid(fname)){
+            return res.status(400).send({status : false ,msg :"Please enter Valid First Name"})
+        }
+
+        
+        if(!validator.isValid(lname)){
+            return res.status(400).send({status : false ,msg :"Please enter Valid Last Name"})
+        }
+
+        if(!validator.isValid(email)){
+            return res.status(400).send({status : false ,msg :"Please enter a Email Id"})
+
+        }
+        if (!(/^\w+([\.-]?\w+)@\w+([\. -]?\w+)(\.\w{2,3})+$/.test(email))) {
+            return res.status(400).send({ status: false, message: "email is not valid" })
+
+             }
+        
+        const duplicateEmail = await userModel.findOne({email:email})
+        if(duplicateEmail){
+            return res.status(400).send({status: false ,msg: "This Email ID already exisits in out Database...Please Enter a unique email id"})     
+        }
+
+        if(!validator.isValid(phone)){
+            return res.status(400).send({status : false ,msg :"Please enter a Email Id"})
+
+        }
+        
+        if (!(/^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/.test(phone))) {
+            return res.status(400).send({ status: false, message: "Mobile Number is not valid" })
+        }
+        
+        const duplicatePhone = await userModel.findOne({phone:phone})
+        if(duplicatePhone){
+            return res.status(400).send({status: false ,msg: "This Phone Number already exisits in out Database...Please Enter a unique Phone Number"})     
+        }
+
+        if(!validator.isValid(data.password)){
+            return res.status(400).send({status : false, msg: "Enter password"})
+        }
+        if(!(/^.{8,15}$/).test(data.password)){
+            return res.status(400).send({status: false,msg:"Password Length should be between 8 and 15"})
+        }
+        // generate salt to hash password
+        const salt = await bcrypt.genSalt(10);
+        // now we set user password to hashed password
+        data.password = await bcrypt.hash(data.password, salt);
+
+        const {shipping,billing} = address
+
+        if(!validator.isValid(shipping.street)){
+            return res.status(400).send({status : false,msg: " Enter Street Name"})
+        }
+
+        if(!validator.isValid(shipping.city)){
+            return res.status(400).send({status : false,msg: " Enter City Name"})
+        }
+
+        if(!validator.isValid(shipping.pincode)){
+            return res.status(400).send({status : false,msg: " Enter Pincode"})
+        }
+
+        if(!validator.isValid(billing.street)){
+            return res.status(400).send({status : false,msg: " Enter Street Name"})
+        }
+
+        if(!validator.isValid(billing.city)){
+            return res.status(400).send({status : false,msg: " Enter City Name"})
+        }
+
+        if(!validator.isValid(billing.pincode)){
+            return res.status(400).send({status : false,msg: " Enter Pincode"})
+        }
+        
+        let files = req.files
+        if(files && files.length > 0){
+            let uploadedFileURL = await aws.uploadFile(files[0])
+            // return res.status(201).send({status: true, message: "file uploaded succesfully", data: uploadedFileURL})
+           
+        }else{
+            return res.status(400).send({ msg: "No file found" })
+        }
+
+      
+        const input = {
+            fname:fname,
+            lname:lname,
+            email:email,
+            profileImage:uploadedFileURL,
+            phone:phone,
+            password:data.password,
+            address:address
+        }
+
+        const output = await userModel.create(input)
+
 
     }
     catch(error){
