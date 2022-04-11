@@ -19,7 +19,8 @@ const register = async function(req,res){
             return res.status(400).send({status:false , msg:"data in query params are not required"})
         }
 
-        const {fname,lname,email,profileImage,phone,address} = data
+        const {fname,lname,email,phone,address} = data
+
 
         if(!validator.isValid(fname)){
             return res.status(400).send({status : false ,msg :"Please enter Valid First Name"})
@@ -68,8 +69,9 @@ const register = async function(req,res){
         const salt = await bcrypt.genSalt(10);
         // now we set user password to hashed password
         data.password = await bcrypt.hash(data.password, salt);
-
-        const {shipping,billing} = address
+        
+        const a = JSON.parse(address)
+        const {shipping,billing} = a
 
         if(!validator.isValid(shipping.street)){
             return res.status(400).send({status : false,msg: " Enter Street Name"})
@@ -97,9 +99,8 @@ const register = async function(req,res){
         
         let files = req.files
         if(files && files.length > 0){
-            let uploadedFileURL = await aws.uploadFile(files[0])
-            // return res.status(201).send({status: true, message: "file uploaded succesfully", data: uploadedFileURL})
-           
+            var uploadedFileURL = await aws.uploadFile(files[0])
+          
         }else{
             return res.status(400).send({ msg: "No file found" })
         }
@@ -112,7 +113,7 @@ const register = async function(req,res){
             profileImage:uploadedFileURL,
             phone:phone,
             password:data.password,
-            address:address
+            address:a
         }
 
         const output = await userModel.create(input)
@@ -152,11 +153,17 @@ const login = async function(req,res){
             return res.status(400).send({status: false,msg:"Password Length should be between 8 and 15"})
         }
 
-        const user = await userModel.findOne({email,password})
-
-        if(!user){
-            return res.status(404).send({status:false,msg:"No Such Data Found....Please Check Credentials"})
-        }
+        const user = await userModel.findOne({email})
+                       
+        if (user) {
+            // check user password with hashed password stored in the database
+            const validPassword = await bcrypt.compare(password, user.password);
+            if (!validPassword) {
+              res.status(400).send({ status: false , msg: "Invalid Password" });
+            }
+          } else {
+            res.status(401).send({ status:false,msg: "User does not exist" });
+          }
 
         const token = jwt.sign({
             userId:user._id.toString(),

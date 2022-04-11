@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken")
 const validator = require("../validator/validator")
 
-const authentication = function(req,res){
+const authentication = function(req,res,next){
  try{
      let token = req.headers
      if(!token){
@@ -23,7 +23,7 @@ const authentication = function(req,res){
  }
 }
 
-const authByUserId = function(req,res){
+const authByUserId = function(req,res,next){
     try{
         let id = req.userId
         let user = req.params.userId
