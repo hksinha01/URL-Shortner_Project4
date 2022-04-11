@@ -1,3 +1,9 @@
+const mongoose = require("mongoose")
+
+const isValidobjectId = (objectId) => {
+    return mongoose.Types.ObjectId.isValid(objectId)
+}
+
 isValidReqBody = function(requestBody){
     return Object.keys(requestBody).length > 0
 }
@@ -18,3 +24,4 @@ isValid = function(value){
 
 module.exports.isValidReqBody=isValidReqBody
 module.exports.isValid=isValid
+module.exports.isValidobjectId=isValidobjectId

@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken")
 
 const register = async function(req,res){
     try{ 
-        const data =req.body.raw
+        const data =req.body
 
         if(!validator.isValidReqBody(data)){
             return res.status(400).send({status:false , msg : "Enter valid data"})
@@ -39,7 +39,7 @@ const register = async function(req,res){
 
              }
         
-        const duplicateEmail = await userModel.findOne({email:email})
+        const duplicateEmail = await userModel.findOne({email})
         if(duplicateEmail){
             return res.status(400).send({status: false ,msg: "This Email ID already exisits in out Database...Please Enter a unique email id"})     
         }
@@ -53,7 +53,7 @@ const register = async function(req,res){
             return res.status(400).send({ status: false, message: "Mobile Number is not valid" })
         }
         
-        const duplicatePhone = await userModel.findOne({phone:phone})
+        const duplicatePhone = await userModel.findOne({phone})
         if(duplicatePhone){
             return res.status(400).send({status: false ,msg: "This Phone Number already exisits in out Database...Please Enter a unique Phone Number"})     
         }
@@ -126,4 +126,57 @@ const register = async function(req,res){
 
 }
 
+const login = async function(req,res){
+    try{
+        const data = req.body
+        if(!validator.isValidReqBody(data)){
+            return res.status(400).send({status : false,msg:"Please enter some Data from Your end"})
+        }
+
+        const {email,password} = data
+
+        if(!validator.isValid(email)){
+            return res.status(400).send({status: false,msg:"Please enter Email Id"})
+        }
+
+        if (!(/^\w+([\.-]?\w+)@\w+([\. -]?\w+)(\.\w{2,3})+$/.test(email))) {
+            return res.status(400).send({ status: false, message: "email is not valid" })
+
+             }
+
+        if(!validator.isValid(password)){
+            return res.status(400).send({status: false,msg:"Please enter Password"})
+        }
+        if(!(/^.{8,15}$/).test(data.password)){
+            return res.status(400).send({status: false,msg:"Password Length should be between 8 and 15"})
+        }
+
+        const user = await userModel.findOne({email,password})
+
+        if(!user){
+            return res.status(404).send({status:false,msg:"No Such Data Found....Please Check Credentials"})
+        }
+
+        const token = jwt.sign({
+            userId:user._id.toString(),
+            group:"11",
+            iat: Math.floor(Date.now() / 1000),         //doubt clear about this after some time   //payload
+            exp: Math.floor(Date.now() / 1000) + 1 * 60 * 60    //1 hours:minute:second
+        },"group11")
+
+        res.setHeader("x-api-key",token)
+        const output = {
+            userId:user._id,
+            token:token
+        }
+
+       return res.status(200).send({status:true,msg:"User login successfull",data:output})
+
+    }
+    catch(error){
+        return res.status(500).send({status: false,msg:error.message})
+    }
+}
+
 module.exports.register = register
+module.exports.login = login
