@@ -3,12 +3,15 @@ const validator = require("../validator/validator")
 
 const authentication = function(req,res,next){
  try{
-     let token = req.Authorization
+     let token = req.headers["authorization"]
+     console.log(token)
      if(!token){
          return res.status(400).send({status:false,msg:"Please pass Token for authentication"})
      }
 
-     let decodedToken = jwt.verify(token,"group11")
+     const a = token && token.split(" ")[1]
+
+     let decodedToken = jwt.verify(a,"group11")
 
      if(!decodedToken){
          return res.status(401).send({status : false ,msg:"Token is Invalid,Please enter a valid token"})
@@ -27,6 +30,10 @@ const authByUserId = function(req,res,next){
     try{
         let id = req.userId
         let user = req.params.userId
+
+        if(!validator.isValid(user)){
+            return res.status(400).send({status:false,msg:"Please Enter User ID"})
+        }
 
         if(!validator.isValidobjectId(user)){
             return res.status(400).send({staus:false,msg:"Please enter Valid UserID(24 char)"})

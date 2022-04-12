@@ -186,5 +186,27 @@ const login = async function(req,res){
     }
 }
 
+const getProfile = async function (req, res) {
+    try {
+        let userId = req.params.userId;
+        
+        let findProfile = await userModel.findOne({ userId })
+        if (!findProfile) {
+            return res.status(404).send({ status: false, msg: "UserId Not Found" })
+        }
+           
+                let fetchProfile = await userModel.findOne({ userId })
+                return res.status(200).send({ status: false, msg: "User profile details", data: fetchProfile })
+    }
+        
+
+    
+    catch (error) {
+        console.log(error)
+        res.status(500).send({ status: false, msg: error.message })
+    }
+}
+
 module.exports.register = register
 module.exports.login = login
+module.exports.getProfile = getProfile
