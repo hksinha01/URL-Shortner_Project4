@@ -22,6 +22,25 @@ isValid = function(value){
     return true
 }
 
+const isValidSizes = (availableSizes) => {
+    return ["S", "XS", "M", "X", "L", "XXL", "XL"].indexOf(availableSizes) !== -1
+
+}
+
+const isINR = (currencyId) => {
+    return ["INR"].indexOf(currencyId) !== -1
+
+}
+
+const isRs = (currencyFormat) => {
+    return ["Rs"].indexOf(currencyFormat) !== -1
+
+}
+
+
 module.exports.isValidReqBody=isValidReqBody
 module.exports.isValid=isValid
 module.exports.isValidobjectId=isValidobjectId
+module.exports.isValidSizes=isValidSizes
+module.exports.isINR=isINR
+module.exports.isRs=isRs
