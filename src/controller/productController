@@ -94,28 +94,32 @@ const getProductbyQuery = async function (req, res) {
         let name = req.query.name
         let priceGreaterThan = req.query.priceGreaterThan
         let priceLessThan = req.query.priceLessThan
+        let priceSort=req.query.priceSort
         let filters = {isDeleted: false}
-
-        if (validator.isValidSizes(size)) {
-            filters["availableSizes"] = size
+        
+        if(size){
+        if (!validator.isValidSizes(size)) {
+           return res.status(400).send({status:false,msg:'No Such Size Exist in our Filters ... Select from ["S", "XS", "M", "X", "L", "XXL", "XL"]'})
         }
+        filters["availableSizes"] = size
+    }
 
-         let op = []
+         let arr = []
 
         if (name) {
             
             const random = await  productModel.find().select({title:1,_id:0})
             for(let i = 0;i < random.length;i++){
-            var baba = random[i].title
+            var checkTitle = random[i].title
 
-            let check = baba.includes(name)
+            let check = checkTitle.includes(name)
              if(check){
-                 op.push(random[i].title)
+                 arr.push(random[i].title)
              }
 
             }
             
-            filters["title"] = op
+            filters["title"] = arr
 
         }
         if (!priceGreaterThan) {
@@ -126,17 +130,23 @@ const getProductbyQuery = async function (req, res) {
         if (priceLessThan) {
             filters["price"] = {$gt: priceGreaterThan, $lt: priceLessThan } 
             
-            const products = await productModel.find(filters).sort({ price: 1 })
+            if(priceSort == 1 || priceSort == -1){
+            const products = await productModel.find(filters).sort({ price: priceSort })
             if(products.length == 0){
                 return res.status(404).send({ status: false, msg: "No such data found according to the filters"})
             }
          
             return res.status(200).send({ status: true, msg: "Results", data: products })
         }
+
+       
+        }
+    
+
         else if (!priceLessThan) {
             filters["price"] = {$gt: priceGreaterThan } 
             
-            const products = await productModel.find(filters).sort({ price: 1 })
+            const products = await productModel.find(filters).sort({ price:45  })
             if(products.length == 0){
                 return res.status(404).send({ status: false, msg: "No such data found according to the filters"})
             }
