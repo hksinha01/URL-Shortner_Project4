@@ -89,33 +89,64 @@ const products = async (req, res) => {
 
 const getProductbyQuery = async function (req, res) {
     try {
-        const input = req.query
-        let filters = {}
-        let { size, name, priceGreaterThan, priceLessThan } = input
+        
+        let size = req.query.size
+        let name = req.query.name
+        let priceGreaterThan = req.query.priceGreaterThan
+        let priceLessThan = req.query.priceLessThan
+        let filters = {isDeleted: false}
 
         if (validator.isValidSizes(size)) {
             filters["availableSizes"] = size
         }
 
+         let op = []
+
         if (name) {
-            filters["title"] = name
+            
+            const random = await  productModel.find().select({title:1,_id:0})
+            for(let i = 0;i < random.length;i++){
+            var baba = random[i].title
+
+            let check = baba.includes(name)
+             if(check){
+                 op.push(random[i].title)
+             }
+
+            }
+            
+            filters["title"] = op
+
         }
         if (!priceGreaterThan) {
             priceGreaterThan = 0
         }
+        
 
         if (priceLessThan) {
-            const products = await productModel.find({ isDeleted: false }, filters, { price: { $gt: priceGreaterThan, $lt: priceLessThan } }).sort({ price: 1 })
-            return res.status(200).send({ status: false, msg: "Results", data: products })
+            filters["price"] = {$gt: priceGreaterThan, $lt: priceLessThan } 
+            
+            const products = await productModel.find(filters).sort({ price: 1 })
+            if(products.length == 0){
+                return res.status(404).send({ status: false, msg: "No such data found according to the filters"})
+            }
+         
+            return res.status(200).send({ status: true, msg: "Results", data: products })
         }
         else if (!priceLessThan) {
-            const products = await productModel.find({ isDeleted: false }, filters, { price: { $gt: priceGreaterThan } }).sort({ price: 1 })
-            return res.status(200).send({ status: false, msg: "Results", data: products })
+            filters["price"] = {$gt: priceGreaterThan } 
+            
+            const products = await productModel.find(filters).sort({ price: 1 })
+            if(products.length == 0){
+                return res.status(404).send({ status: false, msg: "No such data found according to the filters"})
+            }
+            return res.status(200).send({ status: true, msg: "Results", data: products })
         }
 
 
     }
     catch (error) {
+        console.log(error)
         return res.status(500).send({ status: false, msg: error.message })
     }
 
