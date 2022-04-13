@@ -1,6 +1,5 @@
 const userModel = require("../models/userModel")
 const validator = require("../validator/validator")
-const middleware = require("../middleware/middleware")
 const bcrypt = require('bcrypt');
 const aws = require("../aws/aws")
 const jwt = require("jsonwebtoken")
@@ -85,6 +84,10 @@ const register = async function (req, res) {
             return res.status(400).send({ status: false, msg: " Enter Pincode" })
         }
 
+        if (!(shipping.pincode.toString().length === 6)) {
+            return res.status(400).send({ status: false, msg: "Enter Valid Shipping Pincode" })
+        }
+
         if (!validator.isValid(billing.street)) {
             return res.status(400).send({ status: false, msg: " Enter Street Name" })
         }
@@ -96,6 +99,11 @@ const register = async function (req, res) {
         if (!validator.isValid(billing.pincode)) {
             return res.status(400).send({ status: false, msg: " Enter Pincode" })
         }
+
+        if (!(billing.pincode.toString().length === 6)) {
+            return res.status(400).send({ status: false, msg: "Enter Valid billing Pincode" })
+        }
+
 
         let files = req.files
         if (files && files.length > 0) {
@@ -190,13 +198,12 @@ const getProfile = async function (req, res) {
     try {
         let userId = req.params.userId;
 
-        let findProfile = await userModel.findOne({ userId })
+        let findProfile = await userModel.findOne({ _id : userId })
         if (!findProfile) {
             return res.status(404).send({ status: false, msg: "UserId Not Found" })
         }
 
-        let fetchProfile = await userModel.findOne({ userId })
-        return res.status(200).send({ status: false, msg: "User profile details", data: fetchProfile })
+        return res.status(200).send({ status: true , msg: "User profile details", data: findProfile })
     }
 
 
@@ -207,45 +214,146 @@ const getProfile = async function (req, res) {
     }
 }
 
-const update = async (req, res) => {
+const updateProfile = async (req, res) => {
     try {
         let data = req.body
         const id = req.params.userId
-
-
-        const { email, phone } = data
 
         if (!validator.isValidobjectId(id)) {
             res.status(400).send({ status: false, message: `${id} is not a valid user id ` })
             return
         }
 
-        if (!Object.keys(data).length > 0) return res.send({ status: false, msg: "Please enter data for updation" })
-
         const userPresent = await userModel.findById({ _id: id })
 
         if (!userPresent) return res.status(404).send({ status: false, msg: "User not found" })
 
-        let emailUsed = await userModel.findOne({ email })
+
+        if (!validator.isValidReqBody(data)) {
+            if(!(validator.isValidReqBody(req.files)))
+            return res.status(400).send({ status: false, msg: "Please enter Data to be updated" })
+        }
+
+        const { fname, lname, email, phone, address, password } = data
+
+        if (fname) {
+            if (!validator.isValid(fname)) {
+                return res.status(400).send({ status: false, msg: "Please Send Valid First Name " })
+            }
+        }
+
+        if (lname) {
+            if (!validator.isValid(lname)) {
+                return res.status(400).send({ status: false, msg: "Please Send Valid Last Name " })
+            }
+        }
+
         if (email) {
+            if (!validator.isValid(email)) {
+                return res.status(400).send({ status: false, msg: "Please Send Valid Email ID " })
+            }
+
+            if (!(/^\w+([\.-]?\w+)@\w+([\. -]?\w+)(\.\w{2,3})+$/.test(email))) {
+                return res.status(400).send({ status: false, message: "email is not valid" })
+
+            }
+        }
+
+        if (phone) {
+            if (!validator.isValid(phone)) {
+                return res.status(400).send({ status: false, msg: "Please Send Valid Phone Number " })
+            }
+
+            if (!(/^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/.test(phone))) {
+                return res.status(400).send({ status: false, message: "Mobile Number is not valid" })
+            }
+        }
+
+        if (req.files) {
+            let files = req.files
+            if (files && files.length > 0) {
+                var uploadedFileURL = await aws.uploadFile(files[0])
+
+            }
+        }
+
+
+        if (address) {
+            const a = JSON.parse(address)
+            const { shipping, billing } = a
+
+            if (!validator.isValid(shipping.street)) {
+                return res.status(400).send({ status: false, msg: " Enter Street Name" })
+            }
+
+            if (!validator.isValid(shipping.city)) {
+                return res.status(400).send({ status: false, msg: " Enter City Name" })
+            }
+
+            if (!validator.isValid(shipping.pincode)) {
+                return res.status(400).send({ status: false, msg: " Enter Pincode" })
+            }
+
+            if (!(shipping.pincode.toString().length === 6)) {
+                return res.status(400).send({ status: false, msg: "Enter Valid Shipping Pincode" })
+            }
+
+            if (!validator.isValid(billing.street)) {
+                return res.status(400).send({ status: false, msg: " Enter Street Name" })
+            }
+
+            if (!validator.isValid(billing.city)) {
+                return res.status(400).send({ status: false, msg: " Enter City Name" })
+            }
+
+            if (!validator.isValid(billing.pincode)) {
+                return res.status(400).send({ status: false, msg: " Enter Pincode" })
+            }
+
+            if (!(billing.pincode.toString().length === 6)) {
+                return res.status(400).send({ status: false, msg: "Enter Valid billing Pincode" })
+            }
+
+
+        }
+
+        if (password) {
+            if (!validator.isValid(data.password)) {
+                return res.status(400).send({ status: false, msg: "Enter password" })
+            }
+            if (!(/^.{8,15}$/).test(data.password)) {
+                return res.status(400).send({ status: false, msg: "Password Length should be between 8 and 15" })
+            }
+            // generate salt to hash password
+            const salt = await bcrypt.genSalt(10);
+            // now we set user password to hashed password
+            data.password = await bcrypt.hash(data.password, salt);
+        }
+
+
+        let emailUsed = await userModel.findOne({ email })
+        if (emailUsed) {
             return res.status(400).send({ status: false, msg: "email must be Unique" })
         }
 
         let phoneUsed = await userModel.findOne({ phone })
-        if (phone) {
+        if (phoneUsed) {
             return res.status(400).send({ status: false, msg: "Phone must be Unique" })
         }
 
+
         const update = await userModel.findOneAndUpdate({ _id: id }, { $set: data }, { new: true })
+       
+        update["profileImage"] = uploadedFileURL
 
         return res.status(200).send({ status: true, msg: "User Profile updated", data: update })
     }
     catch (error) {
+        console.log(error)
         res.status(500).send({ status: false, message: error.message })
     }
 }
-
 module.exports.register = register
 module.exports.login = login
 module.exports.getProfile = getProfile
-module.exports.update = update
+module.exports.updateProfile = updateProfile

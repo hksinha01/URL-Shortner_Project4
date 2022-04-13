@@ -94,11 +94,11 @@ const getProductbyQuery = async function (req, res) {
         let { size, name, priceGreaterThan, priceLessThan } = input
 
         if (validator.isValidSizes(size)) {
-            filters[availableSizes] = size
+            filters["availableSizes"] = size
         }
 
         if (name) {
-            filters[title] = name
+            filters["title"] = name
         }
         if (!priceGreaterThan) {
             priceGreaterThan = 0
@@ -143,9 +143,6 @@ const getProduct = async function (req, res) {
     }
 }
 
-
-
-
 const updateProduct = async function (req, res) {
     try {
         const productId = req.params.productId
@@ -155,37 +152,93 @@ const updateProduct = async function (req, res) {
             return res.status(400).send({ status: false, msg: "Please enter a valid (24 char) Product id" })
         }
 
-        if (!isValidReqBody(data)) {
+          if (!validator.isValidReqBody(data)) {
+            if(!(validator.isValidReqBody(req.files)))
             return res.status(400).send({ status: false, msg: "Please enter Data to be updated" })
         }
-        if(data.availableSizes){
 
-        if (!validator.isValidSizes(data.availableSizes)) {
-            return res.status(400).send({ status: false, msg: "Available Sizes should be from ['S', 'XS', 'M', 'X', 'L', 'XXL', 'XL']" })
-        }
-    }
-
-        const duplicateTitle =await productModel.findOne({title:data.title})
-        if(duplicateTitle) return res.status(400).send({status:false, msg:"Title already Used"})
+        let { title, description, price, currencyId, currencyFormat, availableSizes } = data
 
         let checkProduct = await productModel.findOne({ _id: productId, isDeleted: true })
         if (checkProduct) {
             return res.status(400).send({ status: false, msg: "Product Already Deleted" })
         }
-        else {
-            const productUpdated = await productModel.findOneAndUpdate({ _id: productId, isDeleted: false }, { $set: data }, { new: true })
-            if (!productUpdated) {
-                return res.staus(404).send({ status: false, msg: "No Such Product exists" })
+
+        if (title) {
+            if (!validator.isValid(title)) {
+                return res.status(400).send({ status: false, msg: "Please enter title" })
             }
-            return res.status(200).send({ status: true, msg: "Data Updated Succesfully", data: productUpdated })
+
+            const titleUsed = await productModel.findOne({ title })
+            if (titleUsed) {
+                return res.status(400).send({ status: false, msg: "title must be unique" })
+            }
         }
+
+        if (description) {
+            if (!validator.isValid(description)) {
+                return res.status(400).send({ status: false, msg: "Please enter description" })
+            }
+        }
+
+        if (price) {
+            if (!validator.isValid(price)) {
+                return res.status(400).send({ status: false, msg: "Please enter Price" })
+            }
+        }
+
+        if(currencyId){
+            if (!validator.isValid(currencyId)) {
+                return res.status(400).send({ status: false, msg: "Please enter currencyId" })
+            }
+    
+            if (!validator.isINR(currencyId)) {
+                return res.status(400).send({ status: false, msg: "Currencr Id must be INR" })
+            }
+        }
+
+        if(currencyFormat){
+            if (!validator.isValid(currencyFormat)) {
+                return res.status(400).send({ status: false, msg: "Please enter currency format" })
+            }
+    
+            if (!validator.isRs(currencyFormat)) {
+                return res.status(400).send({ status: false, msg: "Currency Format must be Rs" })
+            }
+        }
+
+        if(availableSizes){
+            if (!validator.isValid(availableSizes)) {
+                return res.status(400).send({ status: false, msg: "Please enter available sizes" })
+            }
+    
+            if (!validator.isValidSizes(availableSizes)) {
+                return res.status(400).send({ status: false, msg: "Available Sizes should be from ['S', 'XS', 'M', 'X', 'L', 'XXL', 'XL']" })
+            }    
+        }
+
+        if (req.files) {
+            let files = req.files
+            if (files && files.length > 0) {
+                var uploadedFileURL = await aws.uploadFile(files[0])
+            }
+        }
+
+        const productUpdated = await productModel.findOneAndUpdate({ _id: productId, isDeleted: false }, { $set: data }, { new: true })
+        if (!productUpdated) {
+            return res.staus(404).send({ status: false, msg: "No Such Product exists" })
+        }
+
+        productUpdated["productImage"] = uploadedFileURL
+
+        return res.status(200).send({ status: true, msg: "Data Updated Succesfully", data: productUpdated })
     }
+
     catch (error) {
         res.status(500).send({ status: false, msg: error.message })
     }
 
 }
-
 
 
 
